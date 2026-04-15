@@ -12,10 +12,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── EMAILJS CONFIG ─────────────────────
 // 👇 Fill in these 4 values from your EmailJS dashboard
-const EMAILJS_PUBLIC_KEY          = "YOUR_PUBLIC_KEY";          // Account → General
-const EMAILJS_SERVICE_ID          = "YOUR_SERVICE_ID";          // Email Services
-const EMAILJS_TEMPLATE_REG        = "YOUR_REGISTRATION_TEMPLATE_ID";  // Template 1
-const EMAILJS_TEMPLATE_RESULT     = "YOUR_RESULT_TEMPLATE_ID";        // Template 2
+const EMAILJS_PUBLIC_KEY          = "it0vy-uY3kT-sow_l";          // Account → General
+const EMAILJS_SERVICE_ID          = "service_2w1y38i";          // Email Services
+const EMAILJS_TEMPLATE_REG        = "template_0ljpktp";  // Template 1
+const EMAILJS_TEMPLATE_RESULT     = "template_lkkps7q";        // Template 2
 
 // Initialise EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
