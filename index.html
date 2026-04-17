@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JKPS Solutions — Summer Internship 2025</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    .nav-portal {
+      background: rgba(0,229,255,0.08) !important;
+      border: 1px solid rgba(0,229,255,0.25) !important;
+      color: var(--accent) !important;
+      font-weight: 700 !important;
+      border-radius: 8px;
+      padding: 0.3rem 0.9rem !important;
+    }
+    .nav-portal:hover { background: rgba(0,229,255,0.18) !important; }
+
+    .closed-badge-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.5rem;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: 100px;
+      color: #f87171;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+      margin: 1rem 0;
+    }
+
+    .reg-closed-banner {
+      background: linear-gradient(135deg, rgba(248,113,113,0.07), rgba(239,68,68,0.04));
+      border: 1px solid rgba(248,113,113,0.22);
+      border-radius: 20px;
+      padding: 3.5rem 2rem;
+      text-align: center;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+    .reg-closed-banner .closed-icon { font-size: 3.5rem; margin-bottom: 1.25rem; display: block; }
+    .reg-closed-banner h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #f87171;
+      margin-bottom: 1rem;
+    }
+    .reg-closed-banner p {
+      color: #7b829a;
+      font-size: 1rem;
+      line-height: 1.8;
+      max-width: 460px;
+      margin: 0 auto 2rem;
+    }
+    .reg-closed-banner .portal-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 2rem;
+      background: linear-gradient(135deg, #00e5ff, #0080ff);
+      color: #000;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .reg-closed-banner .portal-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(0,229,255,0.3);
+    }
+
+    .assess-note {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 12px;
+      padding: 0.875rem 1.25rem;
+      color: #fbbf24;
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .footer-admin-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      color: rgba(255,255,255,0.12);
+      font-size: 0.7rem;
+      text-decoration: none;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    .footer-admin-link:hover { color: rgba(255,255,255,0.35); }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-bracket"></span>JKPS Solutions<span class="logo-bracket"></span>
+      </div>
+      <nav>
+        <a href="#hero"       class="nav-link active">Home</a>
+        <a href="#internship" class="nav-link">Internship</a>
+        <a href="#assessment" class="nav-link">Assessment</a>
+        <a href="intern-portal.html" class="nav-link nav-portal">🎓 Intern Portal</a>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#hero"       class="nav-link">Home</a>
+      <a href="#internship" class="nav-link">Internship</a>
+      <a href="#assessment" class="nav-link">Assessment</a>
+      <a href="intern-portal.html" class="nav-link nav-portal">🎓 Intern Portal</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg">
+      <div class="grid-lines"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">🚀 Summer 2025 Program — In Progress</div>
+      <h1 class="hero-title">
+        <span class="line-1">JKPS</span>
+        <span class="line-2">Solutions</span>
+      </h1>
+      <p class="hero-sub">Simple. Secure. Scalable.</p>
+      <p class="hero-desc">Empowering engineering students with real-world web development experience through our structured internship program.</p>
+      <div class="hero-actions">
+        <a href="intern-portal.html" class="btn-primary">🎓 Intern Portal <span class="btn-arrow">→</span></a>
+        <a href="#assessment" class="btn-ghost">Take Assessment</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">6</span><span class="stat-label">Week Program</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">100%</span><span class="stat-label">Online</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Learning</span></div>
+      </div>
+    </div>
+    <div class="scroll-indicator"><div class="scroll-dot"></div></div>
+  </section>
+
+  <!-- INTERNSHIP SECTION -->
+  <section id="internship">
+    <div class="section-container">
+      <div class="section-label">PROGRAM</div>
+      <h2 class="section-title">Web Development Summer Internship<br /><span class="accent">Online — Unpaid</span></h2>
+
+      <div class="internship-grid">
+        <div class="info-cards">
+          <div class="info-card" data-delay="0">
+            <div class="card-icon">📅</div>
+            <div class="card-body"><div class="card-label">Duration</div><div class="card-value">6 Weeks</div></div>
+          </div>
+          <div class="info-card" data-delay="100">
+            <div class="card-icon">💻</div>
+            <div class="card-body"><div class="card-label">Mode</div><div class="card-value">Online</div></div>
+          </div>
+          <div class="info-card" data-delay="200">
+            <div class="card-icon">🎓</div>
+            <div class="card-body"><div class="card-label">Eligibility</div><div class="card-value">All Engineering Students</div></div>
+          </div>
+          <div class="info-card" data-delay="300">
+            <div class="card-icon">🏆</div>
+            <div class="card-body"><div class="card-label">Certificate</div><div class="card-value">Provided on Completion</div></div>
+          </div>
+        </div>
+
+        <!-- Status card — registrations closed -->
+        <div class="countdown-card" style="text-align:center;">
+          <div class="countdown-label" style="margin-bottom:0.75rem;">Registration Status</div>
+          <div class="closed-badge-inline">⛔ Registrations Closed</div>
+          <p style="color:#7b829a; font-size:0.88rem; margin: 1rem 0 1.5rem; line-height:1.7;">
+            Applications for the JKPS Summer Internship 2025 are now closed.
+            The program commenced on <strong style="color:#e8eaf0">April 20, 2025</strong>.
+            Registered interns can access their portal below.
+          </p>
+          <a href="intern-portal.html" class="btn-primary btn-full">🎓 Go to Intern Portal →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGISTER SECTION — FULLY REPLACED WITH CLOSED NOTICE -->
+  <section id="register">
+    <div class="section-container">
+      <div class="section-label">APPLICATIONS</div>
+      <h2 class="section-title">Apply for the Program</h2>
+      <div class="form-wrapper">
+        <div class="reg-closed-banner">
+          <span class="closed-icon">⛔</span>
+          <h3>Registrations Closed — Slots Filled</h3>
+          <p>
+            Thank you for your interest in the JKPS Summer Internship 2025.
+            All available slots have been filled and applications are now closed.
+            The internship commenced on <strong style="color:#e8eaf0;">April 20, 2025</strong>.
+            We look forward to welcoming you in our next cohort.
+          </p>
+          <a href="intern-portal.html" class="portal-cta">
+            🎓 Already registered? Access Intern Portal →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ASSESSMENT ENTRY -->
+  <section id="assessment">
+    <div class="section-container">
+      <div class="section-label">TEST YOURSELF</div>
+      <h2 class="section-title">Take the Assessment</h2>
+      <p class="section-desc">Enter your unique assessment code to unlock your test. Your code was sent to your registered email after successful registration.</p>
+
+      <div class="assess-note">
+        ⚠️ This assessment is for registered interns only. Use the code from your registration email.
+      </div>
+
+      <div class="assessment-gate" id="assessmentGate">
+        <div class="code-form">
+          <div class="form-group">
+            <label>Your Assessment Code</label>
+            <input type="text" id="assessCode" placeholder="e.g. A3B7K2" maxlength="8"
+              style="text-transform:uppercase;letter-spacing:4px;font-size:1.4rem;text-align:center;" />
+          </div>
+          <div class="code-err" id="codeErr" style="display:none"></div>
+          <button class="btn-primary btn-full" id="startTestBtn">
+            <span id="startTestText">Start Test →</span>
+            <span class="spinner" id="startTestSpinner" style="display:none"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ SECTION -->
+  <section id="quizSection" style="display:none">
+    <div class="section-container">
+      <div class="quiz-header">
+        <div class="section-label">ASSESSMENT</div>
+        <h2 class="section-title">Web Development Quiz</h2>
+        <div class="quiz-meta">
+          <span class="quiz-badge">10 Questions</span>
+          <span class="quiz-badge">Section A + B</span>
+          <span class="quiz-badge">Submit Once</span>
+        </div>
+        <div class="quiz-progress-wrap">
+          <div class="quiz-progress-bar" id="quizProgressBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <form id="quizForm">
+      <div class="quiz-section-header">
+        <span class="section-tag">SECTION A</span>
+        <h3>Aptitude</h3>
+      </div>
+
+      <div id="q1" class="question-card" data-q="1">
+        <div class="q-num">Q1</div>
+        <div class="q-text">If a train travels 60 km in 45 minutes, what is its speed in km/h?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q1" value="a" /><span>70 km/h</span></label>
+          <label class="opt"><input type="radio" name="q1" value="b" /><span>80 km/h</span></label>
+          <label class="opt"><input type="radio" name="q1" value="c" /><span>75 km/h</span></label>
+          <label class="opt"><input type="radio" name="q1" value="d" /><span>90 km/h</span></label>
+        </div>
+      </div>
+
+      <div id="q2" class="question-card" data-q="2">
+        <div class="q-num">Q2</div>
+        <div class="q-text">What is 15% of 240?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q2" value="a" /><span>32</span></label>
+          <label class="opt"><input type="radio" name="q2" value="b" /><span>36</span></label>
+          <label class="opt"><input type="radio" name="q2" value="c" /><span>38</span></label>
+          <label class="opt"><input type="radio" name="q2" value="d" /><span>42</span></label>
+        </div>
+      </div>
+
+      <div id="q3" class="question-card" data-q="3">
+        <div class="q-num">Q3</div>
+        <div class="q-text">In a series: 2, 6, 12, 20, 30, __ — what is the next number?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q3" value="a" /><span>40</span></label>
+          <label class="opt"><input type="radio" name="q3" value="b" /><span>42</span></label>
+          <label class="opt"><input type="radio" name="q3" value="c" /><span>44</span></label>
+          <label class="opt"><input type="radio" name="q3" value="d" /><span>48</span></label>
+        </div>
+      </div>
+
+      <div id="q4" class="question-card" data-q="4">
+        <div class="q-num">Q4</div>
+        <div class="q-text">A shopkeeper sells an item for ₹840, incurring a 20% loss. What was the cost price?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q4" value="a" /><span>₹1000</span></label>
+          <label class="opt"><input type="radio" name="q4" value="b" /><span>₹1050</span></label>
+          <label class="opt"><input type="radio" name="q4" value="c" /><span>₹1008</span></label>
+          <label class="opt"><input type="radio" name="q4" value="d" /><span>₹1200</span></label>
+        </div>
+      </div>
+
+      <div id="q5" class="question-card" data-q="5">
+        <div class="q-num">Q5</div>
+        <div class="q-text">If CODING is written as DPEJOH, how is JAVA written in that code?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q5" value="a" /><span>KBWB</span></label>
+          <label class="opt"><input type="radio" name="q5" value="b" /><span>LBXC</span></label>
+          <label class="opt"><input type="radio" name="q5" value="c" /><span>IBUB</span></label>
+          <label class="opt"><input type="radio" name="q5" value="d" /><span>JCWB</span></label>
+        </div>
+      </div>
+
+      <div class="quiz-section-header">
+        <span class="section-tag">SECTION B</span>
+        <h3>Web Development (HTML &amp; CSS)</h3>
+      </div>
+
+      <div id="q6" class="question-card" data-q="6">
+        <div class="q-num">Q6</div>
+        <div class="q-text">Which HTML tag is used to define an internal style sheet?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q6" value="a" /><span>&lt;css&gt;</span></label>
+          <label class="opt"><input type="radio" name="q6" value="b" /><span>&lt;style&gt;</span></label>
+          <label class="opt"><input type="radio" name="q6" value="c" /><span>&lt;script&gt;</span></label>
+          <label class="opt"><input type="radio" name="q6" value="d" /><span>&lt;link&gt;</span></label>
+        </div>
+      </div>
+
+      <div id="q7" class="question-card" data-q="7">
+        <div class="q-num">Q7</div>
+        <div class="q-text">Which CSS property controls the text size?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q7" value="a" /><span>text-size</span></label>
+          <label class="opt"><input type="radio" name="q7" value="b" /><span>font-style</span></label>
+          <label class="opt"><input type="radio" name="q7" value="c" /><span>font-size</span></label>
+          <label class="opt"><input type="radio" name="q7" value="d" /><span>text-style</span></label>
+        </div>
+      </div>
+
+      <div id="q8" class="question-card" data-q="8">
+        <div class="q-num">Q8</div>
+        <div class="q-text">What does the HTML &lt;a&gt; tag define?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q8" value="a" /><span>An image</span></label>
+          <label class="opt"><input type="radio" name="q8" value="b" /><span>A hyperlink</span></label>
+          <label class="opt"><input type="radio" name="q8" value="c" /><span>A button</span></label>
+          <label class="opt"><input type="radio" name="q8" value="d" /><span>A paragraph</span></label>
+        </div>
+      </div>
+
+      <div id="q9" class="question-card" data-q="9">
+        <div class="q-num">Q9</div>
+        <div class="q-text">Which CSS property is used to change the background color?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q9" value="a" /><span>color</span></label>
+          <label class="opt"><input type="radio" name="q9" value="b" /><span>bg-color</span></label>
+          <label class="opt"><input type="radio" name="q9" value="c" /><span>background-color</span></label>
+          <label class="opt"><input type="radio" name="q9" value="d" /><span>background</span></label>
+        </div>
+      </div>
+
+      <div id="q10" class="question-card" data-q="10">
+        <div class="q-num">Q10</div>
+        <div class="q-text">Which HTML attribute specifies an alternate text for an image if the image cannot be displayed?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="q10" value="a" /><span>title</span></label>
+          <label class="opt"><input type="radio" name="q10" value="b" /><span>alt</span></label>
+          <label class="opt"><input type="radio" name="q10" value="c" /><span>src</span></label>
+          <label class="opt"><input type="radio" name="q10" value="d" /><span>href</span></label>
+        </div>
+      </div>
+
+      <div class="quiz-submit-area">
+        <div class="quiz-err" id="quizErr" style="display:none"></div>
+        <button type="submit" class="btn-primary btn-full btn-submit" id="quizSubmitBtn">
+          <span id="quizSubmitText">Submit Test</span>
+          <span class="spinner" id="quizSpinner" style="display:none"></span>
+        </button>
+      </div>
+    </form>
+
+    <div id="quizSuccess" class="success-box" style="display:none">
+      <div class="success-icon">✅</div>
+      <h3>Test Submitted Successfully!</h3>
+      <p id="scoreMsg">Your responses have been recorded and your result will be reviewed by our team.</p>
+      <br/>
+      <a href="intern-portal.html" style="color:#00e5ff;font-weight:600;text-decoration:none;">→ Go to Intern Portal</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <span class="logo-bracket"></span>JKPS<span class="logo-bracket"></span>
+        <span class="footer-brand">Solutions</span>
+      </div>
+      <p class="footer-tagline">Simple. Secure. Scalable.</p>
+      <div class="footer-links">
+        <a href="#hero">Home</a>
+        <a href="#internship">Internship</a>
+        <a href="#assessment">Assessment</a>
+        <a href="intern-portal.html">Intern Portal</a>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2025 JKPS Solutions. All rights reserved.</span><br/>
+        <a href="team-lead-login.html" class="footer-admin-link">admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
