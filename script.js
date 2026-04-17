@@ -12,10 +12,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ── EMAILJS CONFIG ─────────────────────
 // 👇 Fill in these 4 values from your EmailJS dashboard
-const EMAILJS_PUBLIC_KEY          = "YOUR_PUBLIC_KEY";          // Account → General
-const EMAILJS_SERVICE_ID          = "YOUR_SERVICE_ID";          // Email Services
-const EMAILJS_TEMPLATE_REG        = "YOUR_REGISTRATION_TEMPLATE_ID";  // Template 1
-const EMAILJS_TEMPLATE_RESULT     = "YOUR_RESULT_TEMPLATE_ID";        // Template 2
+const EMAILJS_PUBLIC_KEY          = "it0vy-uY3kT-sow_l";          // Account → General
+const EMAILJS_SERVICE_ID          = "service_2w1y38i";          // Email Services
+const EMAILJS_TEMPLATE_REG        = "template_0ljpktp";  // Template 1
+const EMAILJS_TEMPLATE_RESULT     = "template_lkkps7q";        // Template 2
 
 // Initialise EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -86,70 +86,178 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.info-card, .question-card').forEach(el => observer.observe(el));
 
 /* ════════════════════════════════════════
-   REGISTRATIONS CLOSED — show immediately
+   COUNTDOWN TIMER
 ════════════════════════════════════════ */
 (function initCountdown() {
+  const now      = new Date();
+  const deadline = new Date(now);
+  deadline.setDate(deadline.getDate() + 1);
+  deadline.setHours(23, 59, 0, 0);
+
+  const hoursEl  = document.getElementById('cd-hours');
+  const minsEl   = document.getElementById('cd-mins');
+  const secsEl   = document.getElementById('cd-secs');
   const timerEl  = document.getElementById('countdown');
   const closedEl = document.getElementById('closedMsg');
-  if (timerEl)  timerEl.style.display  = 'none';
-  if (closedEl) closedEl.style.display = 'block';
-  // Hide the Register Now button in the countdown card
-  const regBtn = document.querySelector('.countdown-card .btn-primary');
-  if (regBtn) regBtn.style.display = 'none';
+
+  function tick() {
+    const diff = deadline - new Date();
+    if (diff <= 0) {
+      timerEl.style.display  = 'none';
+      closedEl.style.display = 'block';
+      return;
+    }
+    const h = Math.floor(diff / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    const s = Math.floor((diff % 60_000)    / 1_000);
+    hoursEl.textContent = String(h).padStart(2, '0');
+    minsEl.textContent  = String(m).padStart(2, '0');
+    secsEl.textContent  = String(s).padStart(2, '0');
+  }
+  tick();
+  setInterval(tick, 1000);
 })();
 
 /* ════════════════════════════════════════
-   REGISTRATION FORM — CLOSED
-   Replace form with closed message
+   FILE DROP ZONE
 ════════════════════════════════════════ */
-(function lockRegistration() {
-  const form    = document.getElementById('registrationForm');
-  const success = document.getElementById('formSuccess');
-  if (!form) return;
-
-  // Hide the form entirely
-  form.style.display = 'none';
-
-  // Show closed notice in its place
-  const closed = document.createElement('div');
-  closed.style.cssText = `
-    text-align:center; padding:3rem 2rem;
-    background:rgba(248,113,113,0.05);
-    border:1px solid rgba(248,113,113,0.2);
-    border-radius:20px; animation:fadeUp 0.5s ease;
-  `;
-  closed.innerHTML = `
-    <div style="font-size:3rem;margin-bottom:1rem">⛔</div>
-    <h3 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:#f87171;margin-bottom:0.75rem">Registrations Closed</h3>
-    <p style="color:#7b829a;font-size:1rem;max-width:420px;margin:0 auto 1.5rem">
-      Applications for the JKPS Summer Internship 2025 are now closed. The internship has already begun on April 20, 2025.
-    </p>
-    <p style="color:#7b829a;font-size:0.875rem">
-      Already registered? <a href="intern-portal.html" style="color:#00e5ff;font-weight:600;text-decoration:none">Access your Intern Portal →</a>
-    </p>
-  `;
-  form.parentNode.insertBefore(closed, success);
-})();
-
-// Dummy file input refs so rest of script doesn't break
-const fileDrop   = document.getElementById('fileDrop');
-const fileInput  = document.getElementById('fresume');
+const fileDrop    = document.getElementById('fileDrop');
+const fileInput   = document.getElementById('fresume');
 const fileContent = document.getElementById('fileDropContent');
-function handleFileSelect() {}
-function setFieldErr() {}
-function clearFieldErr() {}
-function validateForm() { return false; }
+
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFileSelect(fileInput.files[0]);
+});
+
+function handleFileSelect(file) {
+  if (file.type !== 'application/pdf') {
+    setFieldErr('fresume', 'Only PDF files are accepted.');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    setFieldErr('fresume', 'File size must be under 5 MB.');
+    return;
+  }
+  clearFieldErr('fresume');
+  fileInput._selectedFile = file;
+  fileDrop.classList.add('has-file');
+  fileContent.innerHTML = `<div class="file-icon">✅</div><div>${file.name}</div><div class="file-hint">${(file.size/1024).toFixed(0)} KB — ready to upload</div>`;
+}
+
+/* ════════════════════════════════════════
+   FORM VALIDATION HELPERS
+════════════════════════════════════════ */
+function setFieldErr(id, msg) {
+  const el    = document.getElementById(id);
+  const errEl = document.getElementById('err-' + id);
+  if (el)    el.classList.add('invalid');
+  if (errEl) errEl.textContent = msg;
+}
+function clearFieldErr(id) {
+  const el    = document.getElementById(id);
+  const errEl = document.getElementById('err-' + id);
+  if (el)    el.classList.remove('invalid');
+  if (errEl) errEl.textContent = '';
+}
+
+function validateForm() {
+  let valid = true;
+  ['fname', 'femail', 'fcollege', 'fyear', 'fskills'].forEach(f => clearFieldErr(f));
+  clearFieldErr('fresume');
+
+  if (!document.getElementById('fname').value.trim())    { setFieldErr('fname', 'Full name is required.'); valid = false; }
+  const email = document.getElementById('femail').value.trim();
+  if (!email)                                             { setFieldErr('femail', 'Email address is required.'); valid = false; }
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))   { setFieldErr('femail', 'Enter a valid email address.'); valid = false; }
+  if (!document.getElementById('fcollege').value.trim()) { setFieldErr('fcollege', 'College name is required.'); valid = false; }
+  if (!document.getElementById('fyear').value)           { setFieldErr('fyear', 'Please select your year.'); valid = false; }
+  if (!document.getElementById('fskills').value.trim())  { setFieldErr('fskills', 'Please mention at least one skill.'); valid = false; }
+  if (!fileInput._selectedFile)                          { setFieldErr('fresume', 'Please upload your resume (PDF).'); valid = false; }
+
+  return valid;
+}
+
+/* ════════════════════════════════════════
+   GENERATE UNIQUE CODE
+════════════════════════════════════════ */
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-
 /* ════════════════════════════════════════
-   REGISTRATION FORM SUBMIT — DISABLED
-   (Registrations are closed)
+   REGISTRATION FORM SUBMIT
 ════════════════════════════════════════ */
-// Registration is closed — form submit is blocked
+document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+
+  const btn    = document.getElementById('submitBtn');
+  const txtEl  = document.getElementById('submitText');
+  const spinEl = document.getElementById('submitSpinner');
+  btn.disabled         = true;
+  txtEl.style.display  = 'none';
+  spinEl.style.display = 'inline-block';
+
+  try {
+    const name    = document.getElementById('fname').value.trim();
+    const email   = document.getElementById('femail').value.trim();
+    const college = document.getElementById('fcollege').value.trim();
+    const year    = document.getElementById('fyear').value;
+    const skills  = document.getElementById('fskills').value.trim();
+    const file    = fileInput._selectedFile;
+
+    // 1️⃣ Upload resume to Supabase Storage
+    const fileName = `${Date.now()}_${email.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+    const { error: uploadErr } = await supabase
+      .storage.from('resumes').upload(fileName, file, { contentType: 'application/pdf' });
+    if (uploadErr) throw new Error('Resume upload failed: ' + uploadErr.message);
+
+    const { data: urlData } = supabase.storage.from('resumes').getPublicUrl(fileName);
+    const resumeUrl = urlData.publicUrl;
+
+    // 2️⃣ Insert registration record
+    const { error: insertErr } = await supabase.from('intern_registrations').insert({
+      name, email, college, year, skills, resume_url: resumeUrl
+    });
+    if (insertErr) throw new Error('Registration save failed: ' + insertErr.message);
+
+    // 3️⃣ Generate & store assessment code
+    const code = generateCode();
+    const { error: codeErr } = await supabase.from('assessment_codes').insert({
+      email, code, is_used: false
+    });
+    if (codeErr) throw new Error('Code generation failed: ' + codeErr.message);
+
+    // 4️⃣ Send registration email via EmailJS
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_REG, {
+      to_email : email,
+      name     : name,
+      code     : code,
+    });
+
+    // 5️⃣ Show success
+    document.getElementById('registrationForm').style.display = 'none';
+    document.getElementById('formSuccess').style.display      = 'block';
+    document.getElementById('formSuccess').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  } catch (err) {
+    console.error(err);
+    alert('Something went wrong: ' + err.message);
+    btn.disabled         = false;
+    txtEl.style.display  = 'inline';
+    spinEl.style.display = 'none';
+  }
+});
 
 /* ════════════════════════════════════════
    ASSESSMENT CODE VALIDATION
