@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intern Portal — JKPS Solutions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <!-- Supabase must load before our script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#090b10; --bg2:#0e1118; --bg3:#131722; --surface:#161c29;
+      --border:rgba(255,255,255,0.07); --accent:#00e5ff; --accent2:#7c3aed;
+      --accent3:#f59e0b; --text:#e8eaf0; --muted:#7b829a;
+      --error:#f87171; --success:#34d399;
+      --font-head:'Syne',sans-serif; --font-body:'DM Sans',sans-serif;
+      --radius:12px; --radius-lg:20px; --trans:all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:16px; line-height:1.6; overflow-x:hidden; min-height:100vh; }
+    ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes ping{75%,100%{box-shadow:0 0 0 6px rgba(0,229,255,0)}}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,0.2);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite}
+
+    /* HEADER */
+    #header{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(9,11,16,0.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+    .nav-wrap{max-width:1200px;margin:0 auto;padding:0 2rem;height:68px;display:flex;align-items:center;justify-content:space-between}
+    .logo{font-family:var(--font-head);font-weight:800;font-size:1.2rem;letter-spacing:2px;color:var(--text);text-decoration:none}
+    .logo span{color:var(--accent)}
+    .intern-badge{padding:0.3rem 1rem;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);border-radius:100px;font-size:0.78rem;color:var(--accent);font-weight:700;display:none}
+    .btn-logout{padding:0.4rem 1rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.83rem;cursor:pointer;transition:var(--trans);font-family:var(--font-body);display:none}
+    .btn-logout:hover{border-color:var(--error);color:var(--error)}
+
+    main{padding-top:88px;min-height:calc(100vh - 88px)}
+
+    /* LOGIN SCREEN */
+    #loginScreen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 88px);padding:2rem}
+    .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:3rem 2.5rem;width:100%;max-width:420px;animation:fadeUp 0.5s ease}
+    .login-logo{text-align:center;margin-bottom:2rem}
+    .login-brand{font-family:var(--font-head);font-size:1.5rem;font-weight:800;letter-spacing:2px}
+    .login-brand span{color:var(--accent)}
+    .login-sub-label{font-size:0.75rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:0.3rem}
+    .login-title{font-family:var(--font-head);font-size:1.45rem;font-weight:700;text-align:center;margin-bottom:0.4rem}
+    .login-desc{color:var(--muted);font-size:0.88rem;text-align:center;margin-bottom:2rem;line-height:1.6}
+    .field{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.25rem}
+    .field label{font-size:0.85rem;font-weight:600;color:var(--text)}
+    .field input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:0.95rem;padding:0.8rem 1rem;outline:none;transition:var(--trans);width:100%}
+    .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.1)}
+    .field input::placeholder{color:var(--muted)}
+    .login-err{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--error);padding:0.75rem 1rem;border-radius:var(--radius);font-size:0.875rem;margin-bottom:1.25rem;display:none;line-height:1.5}
+    .btn-primary{display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.875rem 2rem;background:linear-gradient(135deg,var(--accent),#0080ff);color:#000;font-weight:700;font-family:var(--font-head);font-size:0.95rem;border-radius:var(--radius);border:none;cursor:pointer;text-decoration:none;transition:var(--trans);width:100%}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(0,229,255,0.35)}
+    .btn-primary:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+
+    /* PORTAL SCREEN */
+    #portalScreen{display:none;padding:2rem;max-width:1100px;margin:0 auto}
+
+    /* Welcome banner */
+    .welcome{background:linear-gradient(135deg,rgba(0,229,255,0.07),rgba(124,58,237,0.07));border:1px solid rgba(0,229,255,0.14);border-radius:var(--radius-lg);padding:2rem 2.5rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;animation:fadeUp 0.4s ease}
+    .welcome h2{font-family:var(--font-head);font-size:1.55rem;font-weight:800}
+    .welcome h2 span{background:linear-gradient(135deg,var(--accent),#0080ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .welcome p{color:var(--muted);font-size:0.9rem;margin-top:0.25rem}
+    .pills{display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end}
+    .pill{padding:0.28rem 0.85rem;border-radius:100px;font-size:0.78rem;font-weight:700}
+    .pill-role{background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.3);color:#a78bfa}
+    .pill-week{background:rgba(0,229,255,0.09);border:1px solid rgba(0,229,255,0.22);color:var(--accent)}
+
+    /* Grid */
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+    .grid-full{grid-column:1/-1}
+    @media(max-width:740px){.grid2{grid-template-columns:1fr}.pills{align-items:flex-start}}
+
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;animation:fadeUp 0.5s ease}
+    .card-head{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem}
+    .card-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+    .ci-blue{background:rgba(0,229,255,0.1)} .ci-purple{background:rgba(124,58,237,0.14)} .ci-amber{background:rgba(245,158,11,0.1)} .ci-green{background:rgba(52,211,153,0.1)}
+    .card-title{font-family:var(--font-head);font-size:1rem;font-weight:700}
+    .card-sub{font-size:0.79rem;color:var(--muted)}
+
+    /* Profile rows */
+    .profile-row{display:flex;flex-direction:column;gap:0}
+    .prow{display:flex;align-items:flex-start;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border)}
+    .prow:last-child{border-bottom:none}
+    .plabel{font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;padding-right:1rem}
+    .pval{font-size:0.88rem;font-weight:600;text-align:right;word-break:break-word;max-width:60%}
+
+    /* Task card */
+    .week-live{display:inline-flex;align-items:center;gap:0.5rem;padding:0.28rem 0.8rem;background:rgba(0,229,255,0.09);border:1px solid rgba(0,229,255,0.2);border-radius:100px;font-size:0.78rem;color:var(--accent);font-weight:700;margin-bottom:1rem}
+    .wdot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:ping 2s infinite}
+    .task-title{font-family:var(--font-head);font-size:1.1rem;font-weight:700;margin-bottom:0.6rem}
+    .task-desc{color:var(--muted);font-size:0.88rem;line-height:1.7;margin-bottom:1rem}
+    .req-list{list-style:none;display:flex;flex-direction:column;gap:0.45rem;margin-bottom:1.1rem}
+    .req-list li{display:flex;align-items:flex-start;gap:0.55rem;font-size:0.85rem}
+    .req-list li::before{content:'▸';color:var(--accent);flex-shrink:0;margin-top:2px}
+    .deadline-strip{display:flex;align-items:center;justify-content:space-between;padding:0.7rem 1rem;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.18);border-radius:var(--radius);font-size:0.84rem}
+    .dl-label{color:var(--accent3);font-weight:700}
+    .dl-date{color:var(--text);font-weight:700;font-size:0.82rem}
+
+    /* Submit */
+    .submit-note{color:var(--muted);font-size:0.86rem;margin-bottom:1.25rem;line-height:1.65}
+    .input-row{display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:end}
+    @media(max-width:560px){.input-row{grid-template-columns:1fr}}
+    .igroup{display:flex;flex-direction:column;gap:0.45rem}
+    .igroup label{font-size:0.85rem;font-weight:600}
+    .igroup input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:0.93rem;padding:0.78rem 1rem;outline:none;transition:var(--trans);width:100%}
+    .igroup input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.1)}
+    .igroup input::placeholder{color:var(--muted)}
+    .btn-submit{padding:0.78rem 1.6rem;background:linear-gradient(135deg,var(--accent),#0080ff);color:#000;font-weight:700;font-family:var(--font-head);font-size:0.88rem;border-radius:var(--radius);border:none;cursor:pointer;transition:var(--trans);white-space:nowrap}
+    .btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,255,0.3)}
+    .btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+    .sub-msg{margin-top:1rem;padding:0.75rem 1rem;border-radius:var(--radius);font-size:0.86rem;font-weight:500;display:none}
+    .sub-msg.ok{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.28);color:var(--success)}
+    .sub-msg.err{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.28);color:var(--error)}
+
+    /* History */
+    .hist-list{display:flex;flex-direction:column;gap:0.7rem}
+    .hist-item{padding:1rem 1.25rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap}
+    .hw{font-family:var(--font-head);font-size:0.83rem;font-weight:700;color:var(--accent);min-width:28px}
+    .htopic{font-size:0.85rem;flex:1}
+    .hlink{font-size:0.8rem;color:var(--accent);text-decoration:none}
+    .hlink:hover{text-decoration:underline}
+    .hbadge{padding:0.18rem 0.65rem;border-radius:100px;font-size:0.72rem;font-weight:700}
+    .b-sub{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:var(--success)}
+    .b-rev{background:rgba(0,229,255,0.09);border:1px solid rgba(0,229,255,0.22);color:var(--accent)}
+    .hfeedback{width:100%;font-size:0.82rem;color:var(--muted);padding-top:0.5rem;border-top:1px solid var(--border);font-style:italic}
+    .empty{text-align:center;padding:2rem;color:var(--muted);font-size:0.88rem}
+
+    /* Certificate */
+    .cert-area{text-align:center;padding:1.5rem 1rem}
+    .cert-area .cert-icon{font-size:2.75rem;margin-bottom:0.9rem}
+    .cert-area p{color:var(--muted);font-size:0.88rem;line-height:1.7}
+    .cert-coming{display:inline-block;margin-top:1rem;padding:0.45rem 1.2rem;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:100px;font-size:0.79rem;color:var(--accent3);font-weight:700}
+    .cert-dl{display:inline-flex;align-items:center;gap:0.5rem;margin-top:1rem;padding:0.75rem 1.75rem;background:linear-gradient(135deg,var(--accent2),#4f46e5);color:#fff;font-weight:700;font-family:var(--font-head);font-size:0.88rem;border-radius:var(--radius);text-decoration:none;transition:var(--trans)}
+    .cert-dl:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,0.35)}
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="nav-wrap">
+      <a href="index.html" class="logo"><span></span>JKPS Solutions<span></span></a>
+      <div style="display:flex;align-items:center;gap:0.85rem">
+        <span class="intern-badge" id="internBadge">🎓 Intern Portal</span>
+        <button class="btn-logout" id="logoutBtn" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- LOGIN -->
+    <div id="loginScreen">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="login-brand"><span></span>JKPS<span></span> Solutions</div>
+          <div class="login-sub-label">Intern Portal</div>
+        </div>
+        <h1 class="login-title">Welcome Back 👋</h1>
+        <p class="login-desc">Sign in with your registered email and the assessment code that was sent to you after registration.</p>
+        <div class="login-err" id="loginErr"></div>
+        <div class="field">
+          <label for="loginEmail">Registered Email Address</label>
+          <input type="email" id="loginEmail" placeholder="you@email.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="loginCode">Assessment Code <span style="color:var(--muted);font-weight:400;font-size:0.78rem">(your password)</span></label>
+          <input type="text" id="loginCode" placeholder="e.g. A3KZ7P" maxlength="8"
+            style="text-transform:uppercase;letter-spacing:4px;font-size:1.1rem;text-align:center" />
+        </div>
+        <button class="btn-primary" id="loginBtn" onclick="doLogin()">
+          <span id="loginText">Sign In to Portal</span>
+          <span class="spinner" id="loginSpinner" style="display:none"></span>
+        </button>
+        <p style="text-align:center;margin-top:1.25rem;font-size:0.82rem;color:var(--muted)">
+          Need help? Email <a href="mailto:team.jkps@gmail.com" style="color:var(--accent);text-decoration:none">team.jkps@gmail.com</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- PORTAL -->
+    <div id="portalScreen">
+
+      <div class="welcome">
+        <div>
+          <h2>Hello, <span id="wName">Intern</span> 👋</h2>
+          <p id="wCollege">JKPS Solutions Summer Internship 2025</p>
+        </div>
+        <div class="pills">
+          <span class="pill pill-role" id="wRole">Front End Developer</span>
+          <span class="pill pill-week" id="wWeek">Week 1 Active</span>
+        </div>
+      </div>
+
+      <div class="grid2">
+
+        <!-- Profile -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon ci-blue">👤</div>
+            <div><div class="card-title">My Profile</div><div class="card-sub">Your internship details</div></div>
+          </div>
+          <div class="profile-row">
+            <div class="prow"><span class="plabel">Name</span><span class="pval" id="pName">—</span></div>
+            <div class="prow"><span class="plabel">Email</span><span class="pval" id="pEmail">—</span></div>
+            <div class="prow"><span class="plabel">College</span><span class="pval" id="pCollege">—</span></div>
+            <div class="prow"><span class="plabel">Year</span><span class="pval" id="pYear">—</span></div>
+            <div class="prow"><span class="plabel">Role</span><span class="pval" id="pRole">—</span></div>
+            <div class="prow"><span class="plabel">Duration</span><span class="pval">Apr 20 – Jun 1, 2025</span></div>
+            <div class="prow"><span class="plabel">Skills</span><span class="pval" id="pSkills">—</span></div>
+          </div>
+        </div>
+
+        <!-- Task -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon ci-purple">📋</div>
+            <div><div class="card-title">This Week's Task</div><div class="card-sub" id="taskWeekSub">Week 1</div></div>
+          </div>
+          <div class="week-live"><span class="wdot"></span><span id="taskWeekLabel">WEEK 1</span> — ACTIVE</div>
+          <div class="task-title" id="taskTitle">Loading…</div>
+          <div class="task-desc" id="taskDesc"></div>
+          <ul class="req-list" id="taskReqs"></ul>
+          <div class="deadline-strip">
+            <span class="dl-label">⏰ Deadline</span>
+            <span class="dl-date" id="taskDeadline">—</span>
+          </div>
+        </div>
+
+        <!-- Submit — full width -->
+        <div class="card grid-full">
+          <div class="card-head">
+            <div class="card-icon ci-amber">🚀</div>
+            <div><div class="card-title">Submit This Week's Work</div><div class="card-sub">Paste your GitHub repo or deployed link</div></div>
+          </div>
+          <p class="submit-note">Push your code to your private GitHub repository, then paste the link to your <strong>week folder</strong> or your <strong>deployed site</strong> below. One submission per week.</p>
+          <div class="input-row">
+            <div class="igroup">
+              <label>Submission Link</label>
+              <input type="url" id="submitLink" placeholder="https://github.com/username/repo  or  https://yoursite.com" />
+            </div>
+            <button class="btn-submit" id="submitBtn" onclick="submitWork()">
+              <span id="submitText">Submit →</span>
+              <span class="spinner" id="submitSpinner" style="display:none;border-top-color:#000"></span>
+            </button>
+          </div>
+          <div class="sub-msg" id="subMsg"></div>
+        </div>
+
+        <!-- History -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon ci-green">📁</div>
+            <div><div class="card-title">My Submissions</div><div class="card-sub">All your submitted work</div></div>
+          </div>
+          <div id="histList"><div class="empty">No submissions yet. Complete your first task and submit above! 💪</div></div>
+        </div>
+
+        <!-- Certificate -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon ci-amber">🏆</div>
+            <div><div class="card-title">My Certificate</div><div class="card-sub">Available after Week 6</div></div>
+          </div>
+          <div class="cert-area">
+            <div class="cert-icon">🎓</div>
+            <p id="certMsg">Your certificate will be available here once you complete all 6 weeks. Keep going — you're doing great!</p>
+            <div id="certAction"><div class="cert-coming">🔒 Available after Week 6 completion</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+  // ── Wait for Supabase to be ready ──
+  const SUPABASE_URL = "https://meseaqdbvchhbaiosejc.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lc2VhcWRidmNoaGJhaW9zZWpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDI4OTUsImV4cCI6MjA5MTc3ODg5NX0.4UtbneF89OZiPlAYypkODp7PmJcbprajW0m6jRpLsGA";
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── Weekly task data ──
+  const TASKS = [
+    {
+      week:1, title:"HTML & CSS Fundamentals — Personal Portfolio",
+      desc:"Build a complete personal portfolio website using only HTML and CSS. This is your foundation — make it solid, clean, and professional.",
+      reqs:["Hero section with your name, title, and short bio","Skills section with at least 6 technologies","Projects section (placeholder cards are fine)","Contact section with email and social links","At least 3 CSS animations or transitions","Custom colour scheme — do NOT use default browser styles","Semantic HTML only (header, main, section, footer, article, nav)","BONUS: Add a working dark/light mode toggle using CSS variables"],
+      deadline:"Sunday, April 27, 2025 — 11:59 PM"
+    },
+    {
+      week:2, title:"Responsive Design — Mobile-First Layout",
+      desc:"Rebuild your portfolio mobile-first. Every element must look perfect on phone, tablet, and desktop.",
+      reqs:["Mobile-first CSS (min-width media queries)","Hamburger menu for mobile navigation","Flexible grid/flexbox — no fixed pixel widths","Images scale correctly on all screen sizes","Test on 375px, 768px, and 1280px breakpoints","BONUS: CSS scroll animations triggered by viewport"],
+      deadline:"Sunday, May 4, 2025 — 11:59 PM"
+    },
+    {
+      week:3, title:"JavaScript — Interactivity & DOM Manipulation",
+      desc:"Add JavaScript interactivity to your portfolio. Make it feel like a real, living website.",
+      reqs:["Dark/light mode toggle with localStorage memory","Smooth scroll to sections on nav click","Contact form with full validation (no libraries)","Typing animation on the hero heading","Skills with animated progress bars on scroll","BONUS: Build a small quiz or interactive feature"],
+      deadline:"Sunday, May 11, 2025 — 11:59 PM"
+    },
+    {
+      week:4, title:"React — Component-Based Portfolio",
+      desc:"Rebuild your portfolio as a React app. Every section should be its own reusable component.",
+      reqs:["Create React App or Vite setup","Minimum 6 separate components","useState for all interactive elements","Props used correctly between parent and child","useEffect for scroll events or side effects","Deployed on Vercel or Netlify — must be live","BONUS: React Router with at least 2 pages"],
+      deadline:"Sunday, May 18, 2025 — 11:59 PM"
+    },
+    {
+      week:5, title:"API Integration — Live Data in Your App",
+      desc:"Connect your React app to at least one public API and display real live data.",
+      reqs:["Fetch from any public REST API (GitHub, OpenWeather, etc.)","Loading state while data fetches","Error state if fetch fails","Clean styled UI for fetched data","Search or filter on the fetched data","BONUS: Pagination with async/await"],
+      deadline:"Sunday, May 25, 2025 — 11:59 PM"
+    },
+    {
+      week:6, title:"Final Project — Build & Deploy a Complete Mini Web App",
+      desc:"Your capstone. Build something real — something you would be proud to show in a job interview.",
+      reqs:["Original idea — not a tutorial copy","React frontend with multiple pages/views","At least one external API integration","Full CRUD or meaningful interactivity","Responsive on all screen sizes","Deployed and live (Vercel, Netlify, or GitHub Pages)","Clean README.md in your repo","BONUS: Authentication or backend (Supabase, Firebase)"],
+      deadline:"Sunday, June 1, 2025 — 11:59 PM"
+    }
+  ];
+
+  let intern = null;
+  let activeWeek = 1;
+
+  // ── LOGIN ──
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const code  = document.getElementById('loginCode').value.trim().toUpperCase();
+    const errEl = document.getElementById('loginErr');
+    errEl.style.display = 'none';
+
+    if (!email) { showLoginErr('Please enter your registered email address.'); return; }
+    if (!code)  { showLoginErr('Please enter your assessment code.'); return; }
+
+    setLoginLoading(true);
+
+    try {
+      // Step 1: Check code matches email
+      const { data: codeRow, error: codeErr } = await db
+        .from('assessment_codes')
+        .select('*')
+        .eq('email', email)
+        .eq('code', code)
+        .maybeSingle();
+
+      if (codeErr) throw new Error('Database error. Please try again.');
+      if (!codeRow) throw new Error('Incorrect email or assessment code. Please check and try again.');
+
+      // Step 2: Fetch intern profile
+      const { data: internRow, error: internErr } = await db
+        .from('intern_registrations')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (internErr) throw new Error('Database error fetching profile. Please try again.');
+      if (!internRow) throw new Error('No registration found for this email. Please contact team.jkps@gmail.com');
+
+      intern = internRow;
+      await showPortal(intern);
+
+    } catch (err) {
+      showLoginErr(err.message);
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  function showLoginErr(msg) {
+    const el = document.getElementById('loginErr');
+    el.textContent = '⚠️ ' + msg;
+    el.style.display = 'block';
+  }
+
+  function setLoginLoading(on) {
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = on;
+    document.getElementById('loginText').style.display    = on ? 'none' : 'inline';
+    document.getElementById('loginSpinner').style.display = on ? 'inline-block' : 'none';
+  }
+
+  // ── SHOW PORTAL ──
+  async function showPortal(i) {
+    document.getElementById('loginScreen').style.display  = 'none';
+    document.getElementById('portalScreen').style.display = 'block';
+    document.getElementById('internBadge').style.display  = 'inline-flex';
+    document.getElementById('logoutBtn').style.display    = 'inline-block';
+
+    // Fill profile
+    const firstName = i.name.split(' ')[0];
+    document.getElementById('wName').textContent    = firstName;
+    document.getElementById('wCollege').textContent = (i.college || '') + (i.year ? ' • ' + i.year : '');
+    document.getElementById('wRole').textContent    = i.role || 'Front End Developer';
+    document.getElementById('pName').textContent    = i.name;
+    document.getElementById('pEmail').textContent   = i.email;
+    document.getElementById('pCollege').textContent = i.college || '—';
+    document.getElementById('pYear').textContent    = i.year    || '—';
+    document.getElementById('pRole').textContent    = (i.role || 'Front End Developer') + ' Intern';
+    document.getElementById('pSkills').textContent  = i.skills  || '—';
+
+    await loadWeek();
+    await loadHistory(i.email);
+    await loadCertificate(i.email);
+  }
+
+  async function loadWeek() {
+    try {
+      const { data } = await db
+        .from('internship_settings')
+        .select('active_week')
+        .eq('id', 1)
+        .maybeSingle();
+      activeWeek = data?.active_week || 1;
+    } catch { activeWeek = 1; }
+
+    const t = TASKS[activeWeek - 1];
+    document.getElementById('wWeek').textContent        = 'Week ' + activeWeek + ' Active';
+    document.getElementById('taskWeekSub').textContent  = 'Week ' + activeWeek;
+    document.getElementById('taskWeekLabel').textContent = 'WEEK ' + activeWeek;
+    document.getElementById('taskTitle').textContent    = t.title;
+    document.getElementById('taskDesc').textContent     = t.desc;
+    document.getElementById('taskDeadline').textContent = t.deadline;
+    document.getElementById('taskReqs').innerHTML = t.reqs.map(r => `<li>${r}</li>`).join('');
+  }
+
+  async function loadHistory(email) {
+    const { data } = await db
+      .from('intern_submissions')
+      .select('*')
+      .eq('email', email)
+      .order('week', { ascending: true });
+
+    const el = document.getElementById('histList');
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="empty">No submissions yet. Complete your first task and submit above! 💪</div>';
+      return;
+    }
+    el.innerHTML = '<div class="hist-list">' + data.map(s => `
+      <div class="hist-item">
+        <span class="hw">W${s.week}</span>
+        <span class="htopic">${(TASKS[s.week-1]?.title || 'Week '+s.week).split('—')[0].trim()}</span>
+        <a href="${s.link}" target="_blank" class="hlink">🔗 View</a>
+        <span class="hbadge ${s.reviewed ? 'b-rev' : 'b-sub'}">${s.reviewed ? 'Reviewed' : 'Submitted'}</span>
+        ${s.feedback ? `<div class="hfeedback">💬 ${s.feedback}</div>` : ''}
+      </div>
+    `).join('') + '</div>';
+  }
+
+  async function loadCertificate(email) {
+    const { data } = await db
+      .from('intern_certificates')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+
+    const actionEl = document.getElementById('certAction');
+    const msgEl    = document.getElementById('certMsg');
+    if (data && data.certificate_url) {
+      msgEl.textContent = 'Congratulations on completing the JKPS Summer Internship 2025! Your certificate is ready.';
+      actionEl.innerHTML = `<a href="${data.certificate_url}" target="_blank" class="cert-dl">🏆 Download Certificate</a>`;
+    } else {
+      actionEl.innerHTML = `<div class="cert-coming">🔒 Available after Week 6 completion</div>`;
+    }
+  }
+
+  // ── SUBMIT WORK ──
+  async function submitWork() {
+    const link  = document.getElementById('submitLink').value.trim();
+    const msgEl = document.getElementById('subMsg');
+    msgEl.style.display = 'none';
+
+    if (!link) { showSubMsg('Please paste your submission link.', 'err'); return; }
+    if (!link.startsWith('http')) { showSubMsg('Please enter a valid URL starting with https://', 'err'); return; }
+
+    // Check already submitted this week
+    const { data: existing } = await db
+      .from('intern_submissions')
+      .select('id')
+      .eq('email', intern.email)
+      .eq('week', activeWeek)
+      .maybeSingle();
+    if (existing) {
+      showSubMsg('You have already submitted Week ' + activeWeek + '. Only one submission per week allowed.', 'err');
+      return;
+    }
+
+    const btn    = document.getElementById('submitBtn');
+    const txtEl  = document.getElementById('submitText');
+    const spinEl = document.getElementById('submitSpinner');
+    btn.disabled   = true;
+    txtEl.style.display  = 'none';
+    spinEl.style.display = 'inline-block';
+
+    try {
+      const { error } = await db.from('intern_submissions').insert({
+        email:        intern.email,
+        name:         intern.name,
+        week:         activeWeek,
+        link,
+        submitted_at: new Date().toISOString(),
+        reviewed:     false,
+        feedback:     null
+      });
+      if (error) throw error;
+
+      document.getElementById('submitLink').value = '';
+      showSubMsg('✅ Week ' + activeWeek + ' submitted! We\'ll review it soon.', 'ok');
+      await loadHistory(intern.email);
+    } catch (err) {
+      showSubMsg('Submission failed: ' + err.message, 'err');
+    } finally {
+      btn.disabled   = false;
+      txtEl.style.display  = 'inline';
+      spinEl.style.display = 'none';
+    }
+  }
+
+  function showSubMsg(msg, type) {
+    const el = document.getElementById('subMsg');
+    el.textContent = msg;
+    el.className = 'sub-msg ' + type;
+    el.style.display = 'block';
+  }
+
+  // ── LOGOUT ──
+  function logout() {
+    intern = null;
+    document.getElementById('portalScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display  = 'flex';
+    document.getElementById('internBadge').style.display  = 'none';
+    document.getElementById('logoutBtn').style.display    = 'none';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginCode').value  = '';
+    document.getElementById('loginErr').style.display = 'none';
+  }
+
+  // Enter key submits login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+      doLogin();
+    }
+  });
+  </script>
+</body>
+</html>

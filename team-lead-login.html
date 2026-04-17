@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Lead Dashboard — JKPS Solutions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#090b10; --bg2:#0e1118; --bg3:#131722; --surface:#161c29;
+      --border:rgba(255,255,255,0.07); --accent:#00e5ff; --accent2:#7c3aed;
+      --accent3:#f59e0b; --text:#e8eaf0; --muted:#7b829a;
+      --error:#f87171; --success:#34d399;
+      --font-head:'Syne',sans-serif; --font-body:'DM Sans',sans-serif;
+      --radius:12px; --radius-lg:20px; --trans:all 0.3s ease;
+    }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:15px; line-height:1.6; overflow-x:hidden; }
+    ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+
+    /* HEADER */
+    #header{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(9,11,16,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:none}
+    .nav-wrap{max-width:1320px;margin:0 auto;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+    .logo{font-family:var(--font-head);font-weight:800;font-size:1.1rem;letter-spacing:2px;color:var(--text)}
+    .logo span{color:var(--accent)}
+    .admin-pill{padding:0.28rem 0.9rem;background:rgba(124,58,237,0.14);border:1px solid rgba(124,58,237,0.3);border-radius:100px;font-size:0.75rem;color:#a78bfa;font-weight:700;letter-spacing:0.5px}
+    .btn-out{padding:0.35rem 0.9rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.8rem;cursor:pointer;transition:var(--trans);font-family:var(--font-body)}
+    .btn-out:hover{border-color:var(--error);color:var(--error)}
+
+    /* LOGIN */
+    #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem}
+    .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:3rem 2.5rem;width:100%;max-width:390px;animation:fadeUp 0.5s ease}
+    .login-logo{text-align:center;margin-bottom:1.75rem}
+    .brand{font-family:var(--font-head);font-size:1.4rem;font-weight:800;letter-spacing:2px}
+    .brand span{color:var(--accent)}
+    .login-title{font-family:var(--font-head);font-size:1.35rem;font-weight:700;text-align:center;margin-bottom:0.4rem}
+    .login-sub{color:var(--muted);font-size:0.86rem;text-align:center;margin-bottom:2rem}
+    .field{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.25rem}
+    .field label{font-size:0.84rem;font-weight:600}
+    .field input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:0.95rem;padding:0.75rem 1rem;outline:none;transition:var(--trans);width:100%}
+    .field input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(124,58,237,0.12)}
+    .field input::placeholder{color:var(--muted)}
+    .login-err{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--error);padding:0.7rem 1rem;border-radius:var(--radius);font-size:0.86rem;margin-bottom:1.1rem;display:none}
+    .btn-admin{width:100%;padding:0.875rem;background:linear-gradient(135deg,var(--accent2),#4f46e5);color:#fff;font-weight:700;font-family:var(--font-head);font-size:0.95rem;border-radius:var(--radius);border:none;cursor:pointer;transition:var(--trans);display:flex;align-items:center;justify-content:center;gap:0.5rem}
+    .btn-admin:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(124,58,237,0.4)}
+    .btn-admin:disabled{opacity:0.6;cursor:not-allowed;transform:none;box-shadow:none}
+
+    /* DASHBOARD */
+    #dashboard{display:none;padding-top:80px}
+    .inner{max-width:1320px;margin:0 auto;padding:2rem}
+
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+    @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;animation:fadeUp 0.4s ease}
+    .stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.4rem}
+    .stat-num{font-family:var(--font-head);font-size:2rem;font-weight:800}
+    .c-cyan{color:var(--accent)} .c-purple{color:#a78bfa} .c-amber{color:var(--accent3)} .c-green{color:var(--success)}
+
+    /* Week control */
+    .wctrl{background:var(--surface);border:1px solid rgba(0,229,255,0.13);border-radius:var(--radius-lg);padding:1.5rem 2rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+    .wctrl h3{font-family:var(--font-head);font-size:1rem;font-weight:700;margin-bottom:0.2rem}
+    .wctrl p{color:var(--muted);font-size:0.83rem}
+    .wbtns{display:flex;gap:0.5rem;flex-wrap:wrap}
+    .wbtn{padding:0.45rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-size:0.83rem;font-weight:700;cursor:pointer;transition:var(--trans);font-family:var(--font-body)}
+    .wbtn:hover{border-color:var(--accent);color:var(--accent)}
+    .wbtn.active{background:rgba(0,229,255,0.1);border-color:var(--accent);color:var(--accent)}
+
+    /* Tabs */
+    .tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap}
+    .tab{padding:0.48rem 1.2rem;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.85rem;font-weight:600;cursor:pointer;transition:var(--trans);font-family:var(--font-body)}
+    .tab:hover{color:var(--text);background:var(--surface)}
+    .tab.active{background:var(--surface);color:var(--accent);border-color:rgba(0,229,255,0.28)}
+
+    /* Table card */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1.5rem}
+    .card-head{padding:1.25rem 1.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+    .card-head h3{font-family:var(--font-head);font-size:1rem;font-weight:700}
+    .search{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:0.85rem;padding:0.48rem 0.9rem;outline:none;width:210px;transition:var(--trans)}
+    .search:focus{border-color:var(--accent)}
+    .search::placeholder{color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    thead tr{border-bottom:1px solid var(--border)}
+    th{padding:0.85rem 1.2rem;text-align:left;font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap}
+    td{padding:0.85rem 1.2rem;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,0.018)}
+    .badge{padding:0.18rem 0.65rem;border-radius:100px;font-size:0.7rem;font-weight:700}
+    .b-sub{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.22);color:var(--success)}
+    .b-rev{background:rgba(0,229,255,0.09);border:1px solid rgba(0,229,255,0.22);color:var(--accent)}
+    .b-pend{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:var(--accent3)}
+    .b-miss{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:var(--error)}
+    .b-week{background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);color:#a78bfa}
+    td a{color:var(--accent);text-decoration:none;font-size:0.8rem}
+    td a:hover{text-decoration:underline}
+    .review-btn{padding:0.33rem 0.8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:0.78rem;cursor:pointer;font-family:var(--font-body);transition:var(--trans)}
+    .review-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .empty{text-align:center;padding:3rem;color:var(--muted);font-size:0.88rem}
+
+    /* Certs */
+    .cert-row{display:grid;grid-template-columns:1fr 2fr auto;gap:0.75rem;align-items:center;padding:0.8rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.04)}
+    .cert-row:last-child{border-bottom:none}
+    @media(max-width:600px){.cert-row{grid-template-columns:1fr;gap:0.5rem}}
+    .cert-name{font-size:0.88rem;font-weight:600}
+    .cert-email{font-size:0.76rem;color:var(--muted)}
+    .cert-input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:0.83rem;padding:0.48rem 0.85rem;outline:none;transition:var(--trans);width:100%}
+    .cert-input:focus{border-color:var(--success)}
+    .cert-input::placeholder{color:var(--muted)}
+    .btn-save-cert{padding:0.44rem 1rem;background:rgba(52,211,153,0.13);border:1px solid rgba(52,211,153,0.28);color:var(--success);border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:var(--trans);white-space:nowrap;font-family:var(--font-body)}
+    .btn-save-cert:hover{background:rgba(52,211,153,0.22)}
+
+    /* Modal */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem;width:100%;max-width:500px;animation:fadeUp 0.3s ease}
+    .modal h3{font-family:var(--font-head);font-size:1.05rem;font-weight:700;margin-bottom:0.2rem}
+    .modal-sub{color:var(--muted);font-size:0.83rem;margin-bottom:1.4rem}
+    .modal-link{display:block;padding:0.7rem 1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--accent);font-size:0.85rem;text-decoration:none;margin-bottom:1.2rem;word-break:break-all;transition:var(--trans)}
+    .modal-link:hover{border-color:var(--accent)}
+    textarea.fta{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-body);font-size:0.88rem;padding:0.8rem 1rem;resize:vertical;min-height:96px;outline:none;transition:var(--trans);margin-bottom:1.2rem}
+    textarea.fta:focus{border-color:var(--accent2)}
+    textarea.fta::placeholder{color:var(--muted)}
+    .modal-btns{display:flex;gap:0.75rem;justify-content:flex-end}
+    .btn-cancel{padding:0.55rem 1.2rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.85rem;cursor:pointer;transition:var(--trans);font-family:var(--font-body)}
+    .btn-cancel:hover{border-color:var(--text);color:var(--text)}
+    .btn-save{padding:0.55rem 1.4rem;background:linear-gradient(135deg,var(--accent),#0080ff);color:#000;font-weight:700;font-family:var(--font-head);font-size:0.85rem;border-radius:8px;border:none;cursor:pointer;transition:var(--trans)}
+    .btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,229,255,0.28)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:2rem;right:2rem;padding:0.85rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:0.86rem;font-weight:600;z-index:9999;animation:fadeUp 0.3s ease;box-shadow:0 8px 28px rgba(0,0,0,0.4)}
+    .toast.ok{border-color:rgba(52,211,153,0.35);color:var(--success)}
+    .toast.er{border-color:rgba(248,113,113,0.35);color:var(--error)}
+  </style>
+</head>
+<body>
+
+  <!-- HEADER (shown after login) -->
+  <header id="header">
+    <div class="nav-wrap">
+      <div class="logo"><span></span>JKPS Solutions<span></span></div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <span class="admin-pill">TEAM LEAD</span>
+        <button class="btn-out" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LOGIN -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="brand"><span></span>JKPS<span></span> Solutions</div>
+      </div>
+      <h1 class="login-title">Team Lead Login 🔐</h1>
+      <p class="login-sub">Restricted access — authorised personnel only</p>
+      <div class="login-err" id="loginErr"></div>
+      <div class="field">
+        <label for="passInput">Password</label>
+        <input type="password" id="passInput" placeholder="Enter team lead password"
+          onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password" />
+      </div>
+      <button class="btn-admin" id="loginBtn" onclick="doLogin()">
+        <span id="loginText">Access Dashboard</span>
+        <span class="spinner" id="loginSpinner" style="display:none"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <div class="inner">
+
+      <!-- Stats row -->
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Total Interns</div><div class="stat-num c-cyan" id="sTotal">—</div></div>
+        <div class="stat"><div class="stat-label">Week Submissions</div><div class="stat-num c-purple" id="sSubs">—</div></div>
+        <div class="stat"><div class="stat-label">Pending Review</div><div class="stat-num c-amber" id="sPending">—</div></div>
+        <div class="stat"><div class="stat-label">Active Week</div><div class="stat-num c-green" id="sWeek">—</div></div>
+      </div>
+
+      <!-- Week control -->
+      <div class="wctrl">
+        <div>
+          <h3>📅 Active Week Control</h3>
+          <p>Set which week interns see in their portal. Change every Monday morning.</p>
+        </div>
+        <div class="wbtns">
+          <button class="wbtn" onclick="setWeek(1)">Week 1</button>
+          <button class="wbtn" onclick="setWeek(2)">Week 2</button>
+          <button class="wbtn" onclick="setWeek(3)">Week 3</button>
+          <button class="wbtn" onclick="setWeek(4)">Week 4</button>
+          <button class="wbtn" onclick="setWeek(5)">Week 5</button>
+          <button class="wbtn" onclick="setWeek(6)">Week 6</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('submissions',this)">📥 Submissions</button>
+        <button class="tab" onclick="showTab('interns',this)">👥 All Interns</button>
+        <button class="tab" onclick="showTab('certificates',this)">🏆 Certificates</button>
+      </div>
+
+      <!-- SUBMISSIONS TAB -->
+      <div id="tab-submissions">
+        <div class="card">
+          <div class="card-head">
+            <h3>📥 All Submissions</h3>
+            <input class="search" placeholder="Search name or email…" oninput="filterRows('tSubs',this.value)" />
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Week</th><th>Submitted</th><th>Link</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="tSubs"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERNS TAB -->
+      <div id="tab-interns" style="display:none">
+        <div class="card">
+          <div class="card-head">
+            <h3>👥 Registered Interns</h3>
+            <input class="search" placeholder="Search name, email, college…" oninput="filterRows('tInterns',this.value)" />
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>College</th><th>Year</th><th>Skills</th><th>Resume</th></tr></thead>
+              <tbody id="tInterns"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CERTIFICATES TAB -->
+      <div id="tab-certificates" style="display:none">
+        <div class="card">
+          <div class="card-head">
+            <h3>🏆 Upload Certificates</h3>
+            <span style="font-size:0.8rem;color:var(--muted)">Paste the certificate PDF/image link for each intern</span>
+          </div>
+          <div id="certList"><div class="empty">Loading…</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- REVIEW MODAL -->
+  <div class="overlay" id="modal">
+    <div class="modal">
+      <h3 id="modalTitle">Review Submission</h3>
+      <p class="modal-sub" id="modalSub"></p>
+      <a href="#" id="modalLink" target="_blank" class="modal-link">🔗 View submission</a>
+      <textarea class="fta" id="feedbackTa" placeholder="Write your feedback here… e.g. 'Good layout! Try to improve mobile nav spacing.'"></textarea>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveFeedback()">Save & Mark Reviewed ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const SUPABASE_URL = "https://meseaqdbvchhbaiosejc.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lc2VhcWRidmNoaGJhaW9zZWpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDI4OTUsImV4cCI6MjA5MTc3ODg5NX0.4UtbneF89OZiPlAYypkODp7PmJcbprajW0m6jRpLsGA";
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const PASSWORD = "pravalika777";
+  let reviewingId = null;
+  let activeWeek  = 1;
+
+  // ── LOGIN ──
+  function doLogin() {
+    const pass  = document.getElementById('passInput').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.style.display = 'none';
+    if (pass !== PASSWORD) {
+      errEl.textContent   = '⚠️ Incorrect password. Please try again.';
+      errEl.style.display = 'block';
+      return;
+    }
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginText').style.display   = 'none';
+    document.getElementById('loginSpinner').style.display = 'inline-block';
+    loadDashboard();
+  }
+
+  function doLogout() {
+    document.getElementById('dashboard').style.display    = 'none';
+    document.getElementById('loginScreen').style.display  = 'flex';
+    document.getElementById('header').style.display       = 'none';
+    document.getElementById('passInput').value = '';
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginText').style.display    = 'inline';
+    document.getElementById('loginSpinner').style.display = 'none';
+  }
+
+  // ── DASHBOARD ──
+  async function loadDashboard() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display   = 'block';
+    document.getElementById('header').style.display      = 'block';
+    await Promise.all([loadStats(), loadSubmissions(), loadInterns(), loadCertificates(), syncWeekBtns()]);
+  }
+
+  async function loadStats() {
+    const [{ count: total }, settingsRes, subsRes] = await Promise.all([
+      db.from('intern_registrations').select('*', { count:'exact', head:true }),
+      db.from('internship_settings').select('active_week').eq('id',1).maybeSingle(),
+      db.from('intern_submissions').select('week, reviewed')
+    ]);
+    activeWeek = settingsRes.data?.active_week || 1;
+    const allSubs  = subsRes.data || [];
+    const weekSubs = allSubs.filter(s => s.week === activeWeek);
+    const pending  = weekSubs.filter(s => !s.reviewed).length;
+    document.getElementById('sTotal').textContent   = total   || 0;
+    document.getElementById('sSubs').textContent    = weekSubs.length;
+    document.getElementById('sPending').textContent = pending;
+    document.getElementById('sWeek').textContent    = activeWeek;
+  }
+
+  async function syncWeekBtns() {
+    const { data } = await db.from('internship_settings').select('active_week').eq('id',1).maybeSingle();
+    activeWeek = data?.active_week || 1;
+    document.querySelectorAll('.wbtn').forEach((btn, i) => {
+      btn.classList.toggle('active', i + 1 === activeWeek);
+    });
+    document.getElementById('sWeek').textContent = activeWeek;
+  }
+
+  async function setWeek(w) {
+    const { error } = await db.from('internship_settings').upsert({ id:1, active_week:w });
+    if (error) { toast('Failed to update week: ' + error.message, 'er'); return; }
+    activeWeek = w;
+    document.querySelectorAll('.wbtn').forEach((btn, i) => btn.classList.toggle('active', i+1 === w));
+    document.getElementById('sWeek').textContent = w;
+    toast('✅ Week ' + w + ' is now active for all interns', 'ok');
+    await loadStats();
+  }
+
+  // ── SUBMISSIONS ──
+  async function loadSubmissions() {
+    const { data } = await db.from('intern_submissions').select('*').order('submitted_at', { ascending:false });
+    const tbody = document.getElementById('tSubs');
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty">No submissions yet.</td></tr>'; return; }
+    tbody.innerHTML = data.map(s => {
+      const date = new Date(s.submitted_at).toLocaleDateString('en-IN', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      const safeLink = (s.link||'').replace(/'/g, "\\'");
+      const safeFb   = (s.feedback||'').replace(/'/g, "\\'").replace(/\n/g,' ');
+      return `<tr data-search="${(s.name+s.email).toLowerCase()}">
+        <td><strong>${s.name||'—'}</strong></td>
+        <td style="color:var(--muted);font-size:0.8rem">${s.email}</td>
+        <td><span class="badge b-week">W${s.week}</span></td>
+        <td style="color:var(--muted);font-size:0.79rem">${date}</td>
+        <td><a href="${s.link}" target="_blank">🔗 Open</a></td>
+        <td><span class="badge ${s.reviewed ? 'b-rev' : 'b-pend'}">${s.reviewed ? 'Reviewed' : 'Pending'}</span></td>
+        <td><button class="review-btn" onclick="openModal('${s.id}','${s.name||''}','${s.email}','${safeLink}','${safeFb}',${s.week})">${s.reviewed ? 'Edit' : 'Review'}</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── INTERNS ──
+  async function loadInterns() {
+    const { data } = await db.from('intern_registrations').select('*').order('name');
+    const tbody = document.getElementById('tInterns');
+    if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty">No registrations found.</td></tr>'; return; }
+    tbody.innerHTML = data.map(i => `
+      <tr data-search="${(i.name+i.email+(i.college||'')).toLowerCase()}">
+        <td><strong>${i.name}</strong></td>
+        <td style="color:var(--muted);font-size:0.8rem">${i.email}</td>
+        <td style="font-size:0.84rem">${i.college||'—'}</td>
+        <td><span class="badge b-sub">${i.year||'—'}</span></td>
+        <td style="font-size:0.8rem;color:var(--muted)">${i.skills||'—'}</td>
+        <td>${i.resume_url ? `<a href="${i.resume_url}" target="_blank">📄 View</a>` : '<span style="color:var(--muted)">—</span>'}</td>
+      </tr>`
+    ).join('');
+  }
+
+  // ── CERTIFICATES ──
+  async function loadCertificates() {
+    const { data: interns } = await db.from('intern_registrations').select('name,email').order('name');
+    const { data: certs }   = await db.from('intern_certificates').select('*');
+    const certMap = {};
+    (certs||[]).forEach(c => certMap[c.email] = c.certificate_url);
+
+    const el = document.getElementById('certList');
+    if (!interns || interns.length === 0) { el.innerHTML = '<div class="empty">No interns yet.</div>'; return; }
+    el.innerHTML = interns.map(i => {
+      const key = btoa(i.email).replace(/=/g,'');
+      return `<div class="cert-row">
+        <div><div class="cert-name">${i.name}</div><div class="cert-email">${i.email}</div></div>
+        <input class="cert-input" id="c-${key}" value="${certMap[i.email]||''}" placeholder="Paste certificate PDF or image link…" />
+        <button class="btn-save-cert" onclick="saveCert('${i.email}','${key}')">Save ✓</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function saveCert(email, key) {
+    const url = document.getElementById('c-' + key).value.trim();
+    if (!url) { toast('Please paste a URL first.', 'er'); return; }
+    const { error } = await db.from('intern_certificates').upsert(
+      { email, certificate_url: url, created_at: new Date().toISOString() },
+      { onConflict: 'email' }
+    );
+    if (error) { toast('Failed: ' + error.message, 'er'); return; }
+    toast('✅ Certificate saved for ' + email, 'ok');
+  }
+
+  // ── MODAL ──
+  function openModal(id, name, email, link, feedback, week) {
+    reviewingId = id;
+    document.getElementById('modalTitle').textContent = `Review — ${name} (Week ${week})`;
+    document.getElementById('modalSub').textContent   = email;
+    const lnk = document.getElementById('modalLink');
+    lnk.href = link; lnk.textContent = '🔗 ' + link;
+    document.getElementById('feedbackTa').value = feedback || '';
+    document.getElementById('modal').style.display = 'flex';
+  }
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+    reviewingId = null;
+  }
+  async function saveFeedback() {
+    const feedback = document.getElementById('feedbackTa').value.trim();
+    const { error } = await db.from('intern_submissions')
+      .update({ reviewed: true, feedback: feedback || null })
+      .eq('id', reviewingId);
+    if (error) { toast('Save failed: ' + error.message, 'er'); return; }
+    closeModal();
+    toast('✅ Feedback saved and marked as reviewed', 'ok');
+    await loadSubmissions();
+    await loadStats();
+  }
+
+  // Close modal on overlay click
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── TABS ──
+  function showTab(name, btn) {
+    ['submissions','interns','certificates'].forEach(t => {
+      document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // ── SEARCH ──
+  function filterRows(tbodyId, query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
+      const text = (tr.dataset.search || tr.textContent).toLowerCase();
+      tr.style.display = text.includes(q) ? '' : 'none';
+    });
+  }
+
+  // ── TOAST ──
+  function toast(msg, type) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+  </script>
+</body>
+</html>
