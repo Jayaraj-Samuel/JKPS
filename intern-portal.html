@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intern Portal — JKPS Solutions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #090b10; --bg2: #0e1118; --bg3: #131722; --surface: #161c29;
+      --border: rgba(255,255,255,0.07); --accent: #00e5ff; --accent2: #7c3aed;
+      --accent3: #f59e0b; --text: #e8eaf0; --muted: #7b829a;
+      --error: #f87171; --success: #34d399; --glow: rgba(0,229,255,0.15);
+      --font-head: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+      --radius: 12px; --radius-lg: 20px; --trans: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--accent2); border-radius: 3px; }
+
+    /* HEADER */
+    #header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(9,11,16,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .nav-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; height: 68px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: var(--font-head); font-weight: 800; font-size: 1.25rem; letter-spacing: 2px; color: var(--text); text-decoration: none; }
+    .logo-bracket { color: var(--accent); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .intern-badge { padding: 0.35rem 1rem; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.25); border-radius: 100px; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+    .btn-logout { padding: 0.4rem 1rem; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.85rem; cursor: pointer; transition: var(--trans); font-family: var(--font-body); }
+    .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+    /* MAIN */
+    main { padding-top: 88px; min-height: 100vh; }
+
+    /* ── LOGIN SCREEN ── */
+    #loginScreen { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 88px); padding: 2rem; }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 3rem 2.5rem; width: 100%; max-width: 420px; animation: fadeUp 0.6s ease; }
+    .login-logo { text-align: center; margin-bottom: 2rem; }
+    .login-logo .brand { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; }
+    .login-logo .sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 0.25rem; }
+    .login-title { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 0.5rem; }
+    .login-sub { color: var(--muted); font-size: 0.9rem; text-align: center; margin-bottom: 2rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .form-group label { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+    .form-group input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--font-body); font-size: 0.95rem; padding: 0.8rem 1rem; width: 100%; outline: none; transition: var(--trans); }
+    .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.1); }
+    .form-group input::placeholder { color: var(--muted); }
+    .login-err { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.875rem; margin-bottom: 1rem; display: none; }
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.875rem 2rem; background: linear-gradient(135deg, var(--accent), #0080ff); color: #000; font-weight: 700; font-family: var(--font-head); font-size: 0.95rem; border-radius: var(--radius); border: none; cursor: pointer; text-decoration: none; transition: var(--trans); width: 100%; letter-spacing: 0.5px; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,229,255,0.35); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── PORTAL SCREEN ── */
+    #portalScreen { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+
+    /* Welcome Banner */
+    .welcome-banner { background: linear-gradient(135deg, rgba(0,229,255,0.08), rgba(124,58,237,0.08)); border: 1px solid rgba(0,229,255,0.15); border-radius: var(--radius-lg); padding: 2rem 2.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; animation: fadeUp 0.5s ease; }
+    .welcome-text h2 { font-family: var(--font-head); font-size: 1.6rem; font-weight: 800; }
+    .welcome-text h2 span { background: linear-gradient(135deg, var(--accent), #0080ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .welcome-text p { color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem; }
+    .welcome-meta { display: flex; flex-direction: column; gap: 0.4rem; text-align: right; }
+    .meta-pill { padding: 0.3rem 0.9rem; border-radius: 100px; font-size: 0.8rem; font-weight: 600; }
+    .pill-role { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3); color: #a78bfa; }
+    .pill-week { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.25); color: var(--accent); }
+
+    /* GRID */
+    .portal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    @media(max-width:768px) { .portal-grid { grid-template-columns: 1fr; } .welcome-meta { text-align: left; } }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.75rem; animation: fadeUp 0.5s ease; }
+    .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .icon-accent { background: rgba(0,229,255,0.1); }
+    .icon-purple { background: rgba(124,58,237,0.15); }
+    .icon-amber { background: rgba(245,158,11,0.1); }
+    .icon-green { background: rgba(52,211,153,0.1); }
+    .card-title { font-family: var(--font-head); font-size: 1rem; font-weight: 700; }
+    .card-sub { font-size: 0.8rem; color: var(--muted); }
+
+    /* Profile Card */
+    .profile-row { display: flex; flex-direction: column; gap: 0.75rem; }
+    .profile-item { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .profile-item:last-child { border-bottom: none; }
+    .p-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .p-value { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+
+    /* Week Task Card */
+    .week-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.8rem; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.2); border-radius: 100px; font-size: 0.8rem; color: var(--accent); font-weight: 700; margin-bottom: 1rem; }
+    .week-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: ping 2s infinite; }
+    @keyframes ping { 75%,100% { box-shadow: 0 0 0 6px rgba(0,229,255,0); } }
+    .task-title { font-family: var(--font-head); font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .task-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.25rem; }
+    .task-requirements { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .task-requirements li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.875rem; color: var(--text); }
+    .task-requirements li::before { content: '▸'; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+    .deadline-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: var(--radius); font-size: 0.85rem; }
+    .deadline-label { color: var(--accent3); font-weight: 600; }
+    .deadline-date { color: var(--text); font-weight: 700; }
+
+    /* Submit Card - full width */
+    .card-full { grid-column: 1 / -1; }
+    .submit-note { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.25rem; line-height: 1.6; }
+    .input-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; }
+    @media(max-width:600px) { .input-row { grid-template-columns: 1fr; } }
+    .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .input-group label { font-size: 0.875rem; font-weight: 600; }
+    .input-group input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--font-body); font-size: 0.95rem; padding: 0.8rem 1rem; outline: none; transition: var(--trans); width: 100%; }
+    .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.1); }
+    .input-group input::placeholder { color: var(--muted); }
+    .btn-submit-sm { padding: 0.8rem 1.75rem; background: linear-gradient(135deg, var(--accent), #0080ff); color: #000; font-weight: 700; font-family: var(--font-head); font-size: 0.9rem; border-radius: var(--radius); border: none; cursor: pointer; transition: var(--trans); white-space: nowrap; }
+    .btn-submit-sm:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,255,0.3); }
+    .btn-submit-sm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .submit-msg { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.875rem; font-weight: 500; display: none; }
+    .submit-msg.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
+    .submit-msg.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); }
+
+    /* Submissions History */
+    .history-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .history-item { padding: 1rem 1.25rem; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .hist-week { font-family: var(--font-head); font-size: 0.85rem; font-weight: 700; color: var(--accent); min-width: 60px; }
+    .hist-topic { font-size: 0.875rem; color: var(--text); flex: 1; }
+    .hist-link { font-size: 0.8rem; color: var(--accent); text-decoration: none; word-break: break-all; }
+    .hist-link:hover { text-decoration: underline; }
+    .hist-status { padding: 0.2rem 0.7rem; border-radius: 100px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+    .status-submitted { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: var(--success); }
+    .status-reviewed { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.25); color: var(--accent); }
+    .status-pending { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); color: var(--accent3); }
+    .hist-feedback { width: 100%; font-size: 0.82rem; color: var(--muted); padding-top: 0.5rem; border-top: 1px solid var(--border); font-style: italic; }
+    .empty-state { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem; }
+
+    /* Certificate Card */
+    .cert-placeholder { text-align: center; padding: 2rem; }
+    .cert-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .cert-msg { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+    .cert-link-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.75rem; background: linear-gradient(135deg, var(--accent2), #4f46e5); color: #fff; font-weight: 700; font-family: var(--font-head); font-size: 0.9rem; border-radius: var(--radius); text-decoration: none; transition: var(--trans); margin-top: 1.25rem; }
+    .cert-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,0.35); }
+    .cert-coming { padding: 0.5rem 1.25rem; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 100px; font-size: 0.8rem; color: var(--accent3); font-weight: 600; display: inline-block; margin-top: 1rem; }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="nav-container">
+      <a href="index.html" class="logo"><span class="logo-bracket"></span>JKPS Solutions<span class="logo-bracket"></span></a>
+      <div class="nav-right">
+        <span class="intern-badge" id="headerBadge" style="display:none">🎓 Intern Portal</span>
+        <button class="btn-logout" id="logoutBtn" style="display:none" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── LOGIN SCREEN ── -->
+    <div id="loginScreen">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="brand"><span class="logo-bracket"></span>JKPS<span class="logo-bracket"></span></div>
+          <div class="sub">Intern Portal</div>
+        </div>
+        <h1 class="login-title">Welcome Back 👋</h1>
+        <p class="login-sub">Sign in with your registered email and assessment code</p>
+        <div class="login-err" id="loginErr"></div>
+        <div class="form-group">
+          <label>Registered Email</label>
+          <input type="email" id="loginEmail" placeholder="you@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Assessment Code <span style="color:var(--muted);font-weight:400;font-size:0.8rem">(your password)</span></label>
+          <input type="text" id="loginCode" placeholder="e.g. A3KZ7P" style="text-transform:uppercase;letter-spacing:3px" />
+        </div>
+        <button class="btn-primary" id="loginBtn" onclick="doLogin()">
+          <span id="loginText">Sign In to Portal</span>
+          <span class="spinner" id="loginSpinner" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── PORTAL SCREEN ── -->
+    <div id="portalScreen">
+
+      <!-- Welcome Banner -->
+      <div class="welcome-banner">
+        <div class="welcome-text">
+          <h2>Hello, <span id="internName">Intern</span> 👋</h2>
+          <p id="internCollege">JKPS Solutions Summer Internship 2025</p>
+        </div>
+        <div class="welcome-meta">
+          <span class="meta-pill pill-role" id="internRole">Front End Developer</span>
+          <span class="meta-pill pill-week" id="currentWeekPill">Week 1 Active</span>
+        </div>
+      </div>
+
+      <div class="portal-grid">
+
+        <!-- Profile Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-accent">👤</div>
+            <div><div class="card-title">My Profile</div><div class="card-sub">Your internship details</div></div>
+          </div>
+          <div class="profile-row">
+            <div class="profile-item"><span class="p-label">Name</span><span class="p-value" id="pName">—</span></div>
+            <div class="profile-item"><span class="p-label">Email</span><span class="p-value" id="pEmail">—</span></div>
+            <div class="profile-item"><span class="p-label">College</span><span class="p-value" id="pCollege">—</span></div>
+            <div class="profile-item"><span class="p-label">Year</span><span class="p-value" id="pYear">—</span></div>
+            <div class="profile-item"><span class="p-label">Role</span><span class="p-value" id="pRole">—</span></div>
+            <div class="profile-item"><span class="p-label">Duration</span><span class="p-value">Apr 20 – Jun 1, 2025</span></div>
+            <div class="profile-item"><span class="p-label">Skills</span><span class="p-value" id="pSkills" style="text-align:right;max-width:55%">—</span></div>
+          </div>
+        </div>
+
+        <!-- Current Week Task Card -->
+        <div class="card" id="taskCard">
+          <div class="card-header">
+            <div class="card-icon icon-purple">📋</div>
+            <div><div class="card-title">This Week's Task</div><div class="card-sub" id="taskWeekLabel">Week 1</div></div>
+          </div>
+          <div class="week-badge"><span class="dot"></span><span id="taskWeekNum">WEEK 1</span> — ACTIVE</div>
+          <div class="task-title" id="taskTitle">Loading...</div>
+          <div class="task-desc" id="taskDesc">Please wait while we load your task.</div>
+          <ul class="task-requirements" id="taskRequirements"></ul>
+          <div class="deadline-bar">
+            <span class="deadline-label">⏰ Deadline</span>
+            <span class="deadline-date" id="taskDeadline">—</span>
+          </div>
+        </div>
+
+        <!-- Submit Work — full width -->
+        <div class="card card-full">
+          <div class="card-header">
+            <div class="card-icon icon-amber">🚀</div>
+            <div><div class="card-title">Submit This Week's Work</div><div class="card-sub">Paste your GitHub repo or deployed link</div></div>
+          </div>
+          <p class="submit-note">Make sure your code is pushed to your private GitHub repository before submitting. Paste the link to your <strong>week folder</strong> or your <strong>deployed site</strong> below.</p>
+          <div class="input-row">
+            <div class="input-group">
+              <label>Your Submission Link</label>
+              <input type="url" id="submitLink" placeholder="https://github.com/yourusername/your-repo or https://yoursite.com" />
+            </div>
+            <button class="btn-submit-sm" id="submitBtn" onclick="submitWork()">
+              <span id="submitText">Submit →</span>
+              <span class="spinner" id="submitSpinner" style="display:none"></span>
+            </button>
+          </div>
+          <div class="submit-msg" id="submitMsg"></div>
+        </div>
+
+        <!-- Submission History -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-green">📁</div>
+            <div><div class="card-title">My Submissions</div><div class="card-sub">All your submitted work</div></div>
+          </div>
+          <div class="history-list" id="historyList">
+            <div class="empty-state">No submissions yet. Submit your first task above! 💪</div>
+          </div>
+        </div>
+
+        <!-- Certificate Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-amber">🏆</div>
+            <div><div class="card-title">My Certificate</div><div class="card-sub">Available after Week 6</div></div>
+          </div>
+          <div class="cert-placeholder" id="certArea">
+            <div class="cert-icon">🎓</div>
+            <p class="cert-msg" id="certMsg">Your certificate will be available here after you complete all 6 weeks of the internship. Keep up the great work!</p>
+            <div id="certAction"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ── SUPABASE INIT ──
+    const SUPABASE_URL = "https://meseaqdbvchhbaiosejc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lc2VhcWRidmNoaGJhaW9zZWpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDI4OTUsImV4cCI6MjA5MTc3ODg5NX0.4UtbneF89OZiPlAYypkODp7PmJcbprajW0m6jRpLsGA";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ── WEEKLY TASKS ──
+    const WEEKLY_TASKS = [
+      {
+        week: 1,
+        title: "HTML & CSS Fundamentals — Personal Portfolio",
+        desc: "Build a complete personal portfolio website using only HTML and CSS. This is your foundation — make it solid, clean, and professional.",
+        requirements: [
+          "Hero section with your name, title, and a short bio",
+          "Skills section with at least 6 technologies",
+          "Projects section (placeholder cards are fine)",
+          "Contact section with email and social links",
+          "At least 3 CSS animations or transitions",
+          "Custom colour scheme — do NOT use default browser styles",
+          "Semantic HTML only (use header, main, section, footer, article, nav)",
+          "BONUS: Add a working dark/light mode toggle using CSS variables"
+        ],
+        deadline: "Sunday, April 27, 2025 — 11:59 PM"
+      },
+      {
+        week: 2,
+        title: "Responsive Design — Mobile-First Layout",
+        desc: "Take your Week 1 portfolio and rebuild it mobile-first. Every element must look perfect on phone, tablet, and desktop.",
+        requirements: [
+          "Mobile-first CSS (min-width media queries)",
+          "Hamburger menu for mobile navigation",
+          "Flexible grid/flexbox layouts — no fixed pixel widths",
+          "Images must scale properly on all screen sizes",
+          "Test on at least 3 breakpoints: 375px, 768px, 1280px",
+          "BONUS: Add CSS scroll animations triggered by viewport entry"
+        ],
+        deadline: "Sunday, May 4, 2025 — 11:59 PM"
+      },
+      {
+        week: 3,
+        title: "JavaScript — Interactivity & DOM Manipulation",
+        desc: "Add JavaScript interactivity to your portfolio. Make it feel like a real, living website.",
+        requirements: [
+          "Working dark/light mode toggle that remembers preference (localStorage)",
+          "Smooth scroll to sections on nav link click",
+          "Contact form with full validation (name, email, message — no libraries)",
+          "Typing animation effect on the hero heading",
+          "Skills section with animated progress bars on scroll",
+          "BONUS: Build a small quiz or interactive element on the page"
+        ],
+        deadline: "Sunday, May 11, 2025 — 11:59 PM"
+      },
+      {
+        week: 4,
+        title: "React — Component-Based Portfolio",
+        desc: "Rebuild your portfolio completely as a React app. Think in components — every section should be its own reusable component.",
+        requirements: [
+          "Create React App or Vite setup",
+          "Minimum 6 separate components (Navbar, Hero, Skills, Projects, Contact, Footer)",
+          "useState for all interactive elements",
+          "Props used correctly between parent and child components",
+          "useEffect for any side effects (scroll events, timers)",
+          "Deploy on Vercel or Netlify — must be live",
+          "BONUS: Add React Router with at least 2 pages"
+        ],
+        deadline: "Sunday, May 18, 2025 — 11:59 PM"
+      },
+      {
+        week: 5,
+        title: "API Integration — Live Data in Your App",
+        desc: "Connect your React app to at least one public API and display real live data. This is where it starts to feel like a real application.",
+        requirements: [
+          "Fetch data from any public REST API (GitHub, OpenWeather, NewsAPI, etc.)",
+          "Show a loading state while data is fetching",
+          "Show an error state if the fetch fails",
+          "Display fetched data in a clean, styled UI component",
+          "Add a search or filter feature on the fetched data",
+          "BONUS: Use async/await and handle pagination"
+        ],
+        deadline: "Sunday, May 25, 2025 — 11:59 PM"
+      },
+      {
+        week: 6,
+        title: "Final Project — Build & Deploy a Complete Mini Web App",
+        desc: "This is your capstone. Build something real — something you'd be proud to show in a job interview. It should solve a real problem.",
+        requirements: [
+          "Original idea — not a tutorial copy",
+          "React frontend with multiple pages/views",
+          "At least one external API integration",
+          "Full CRUD or meaningful interactivity",
+          "Responsive design — works on all screen sizes",
+          "Deployed and live (Vercel, Netlify, or GitHub Pages)",
+          "Clean README.md in your repo explaining the project",
+          "BONUS: Add authentication or a backend (Supabase, Firebase)"
+        ],
+        deadline: "Sunday, June 1, 2025 — 11:59 PM"
+      }
+    ];
+
+    let currentIntern = null;
+    let activeWeek = 1;
+
+    // ── LOGIN ──
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const code  = document.getElementById('loginCode').value.trim().toUpperCase();
+      const errEl = document.getElementById('loginErr');
+      errEl.style.display = 'none';
+
+      if (!email || !code) { showErr('Please enter both your email and assessment code.'); return; }
+
+      setLoginLoading(true);
+      try {
+        // Verify code matches email in assessment_codes table
+        const { data: codeData, error: codeErr } = await supabase
+          .from('assessment_codes').select('*').eq('email', email).eq('code', code).single();
+        if (codeErr || !codeData) throw new Error('Invalid email or code. Please check and try again.');
+
+        // Fetch intern profile
+        const { data: intern, error: internErr } = await supabase
+          .from('intern_registrations').select('*').eq('email', email).single();
+        if (internErr || !intern) throw new Error('Registration not found for this email.');
+
+        currentIntern = intern;
+        await loadPortal(intern);
+      } catch (err) {
+        showErr(err.message);
+      } finally {
+        setLoginLoading(false);
+      }
+    }
+
+    function showErr(msg) {
+      const el = document.getElementById('loginErr');
+      el.textContent = '⚠️ ' + msg;
+      el.style.display = 'block';
+    }
+
+    function setLoginLoading(on) {
+      document.getElementById('loginBtn').disabled = on;
+      document.getElementById('loginText').style.display = on ? 'none' : 'inline';
+      document.getElementById('loginSpinner').style.display = on ? 'inline-block' : 'none';
+    }
+
+    // ── LOAD PORTAL ──
+    async function loadPortal(intern) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('portalScreen').style.display = 'block';
+      document.getElementById('headerBadge').style.display = 'inline-flex';
+      document.getElementById('logoutBtn').style.display = 'inline-block';
+
+      // Fill profile
+      document.getElementById('internName').textContent = intern.name.split(' ')[0];
+      document.getElementById('internCollege').textContent = intern.college + ' • ' + intern.year;
+      document.getElementById('internRole').textContent = intern.role || 'Front End Developer';
+      document.getElementById('pName').textContent = intern.name;
+      document.getElementById('pEmail').textContent = intern.email;
+      document.getElementById('pCollege').textContent = intern.college;
+      document.getElementById('pYear').textContent = intern.year;
+      document.getElementById('pRole').textContent = intern.role || 'Front End Developer Intern';
+      document.getElementById('pSkills').textContent = intern.skills;
+
+      // Get active week from DB (set by admin)
+      await loadActiveWeek();
+      await loadSubmissions(intern.email);
+      await loadCertificate(intern.email);
+    }
+
+    async function loadActiveWeek() {
+      // Check active_week table set by admin
+      const { data } = await supabase.from('internship_settings').select('active_week').eq('id', 1).single();
+      activeWeek = data?.active_week || 1;
+
+      const task = WEEKLY_TASKS[activeWeek - 1];
+      document.getElementById('currentWeekPill').textContent = `Week ${activeWeek} Active`;
+      document.getElementById('taskWeekLabel').textContent = `Week ${activeWeek}`;
+      document.getElementById('taskWeekNum').textContent = `WEEK ${activeWeek}`;
+      document.getElementById('taskTitle').textContent = task.title;
+      document.getElementById('taskDesc').textContent = task.desc;
+      document.getElementById('taskDeadline').textContent = task.deadline;
+
+      const ul = document.getElementById('taskRequirements');
+      ul.innerHTML = task.requirements.map(r => `<li>${r}</li>`).join('');
+    }
+
+    async function loadSubmissions(email) {
+      const { data } = await supabase
+        .from('intern_submissions')
+        .select('*')
+        .eq('email', email)
+        .order('week', { ascending: true });
+
+      const list = document.getElementById('historyList');
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div class="empty-state">No submissions yet. Submit your first task above! 💪</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(s => `
+        <div class="history-item">
+          <span class="hist-week">W${s.week}</span>
+          <span class="hist-topic">${WEEKLY_TASKS[s.week-1]?.title?.split('—')[0] || 'Week ' + s.week}</span>
+          <a href="${s.link}" target="_blank" class="hist-link" title="${s.link}">🔗 View</a>
+          <span class="hist-status ${s.reviewed ? 'status-reviewed' : 'status-submitted'}">${s.reviewed ? 'Reviewed' : 'Submitted'}</span>
+          ${s.feedback ? `<div class="hist-feedback">💬 ${s.feedback}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function loadCertificate(email) {
+      const { data } = await supabase
+        .from('intern_certificates')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      const certAction = document.getElementById('certAction');
+      const certMsg = document.getElementById('certMsg');
+
+      if (data && data.certificate_url) {
+        certMsg.textContent = 'Congratulations! Your certificate is ready. Click below to download.';
+        certAction.innerHTML = `<a href="${data.certificate_url}" target="_blank" class="cert-link-btn">🏆 Download Certificate</a>`;
+      } else {
+        certAction.innerHTML = `<div class="cert-coming">🔒 Available after Week 6 completion</div>`;
+      }
+    }
+
+    // ── SUBMIT WORK ──
+    async function submitWork() {
+      const link = document.getElementById('submitLink').value.trim();
+      const msgEl = document.getElementById('submitMsg');
+      msgEl.style.display = 'none';
+
+      if (!link) { showSubmitMsg('Please paste your submission link.', 'error'); return; }
+      if (!link.startsWith('http')) { showSubmitMsg('Please enter a valid URL starting with https://', 'error'); return; }
+
+      // Check if already submitted this week
+      const { data: existing } = await supabase
+        .from('intern_submissions').select('id').eq('email', currentIntern.email).eq('week', activeWeek).single();
+      if (existing) { showSubmitMsg('You have already submitted Week ' + activeWeek + '. Only one submission per week is allowed.', 'error'); return; }
+
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitText').style.display = 'none';
+      document.getElementById('submitSpinner').style.display = 'inline-block';
+
+      try {
+        const { error } = await supabase.from('intern_submissions').insert({
+          email: currentIntern.email,
+          name: currentIntern.name,
+          week: activeWeek,
+          link,
+          submitted_at: new Date().toISOString(),
+          reviewed: false,
+          feedback: null
+        });
+        if (error) throw error;
+
+        document.getElementById('submitLink').value = '';
+        showSubmitMsg('✅ Week ' + activeWeek + ' submitted successfully! We\'ll review it soon.', 'success');
+        await loadSubmissions(currentIntern.email);
+      } catch (err) {
+        showSubmitMsg('Submission failed: ' + err.message, 'error');
+      } finally {
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitText').style.display = 'inline';
+        document.getElementById('submitSpinner').style.display = 'none';
+      }
+    }
+
+    function showSubmitMsg(msg, type) {
+      const el = document.getElementById('submitMsg');
+      el.textContent = msg;
+      el.className = 'submit-msg ' + type;
+      el.style.display = 'block';
+    }
+
+    // ── LOGOUT ──
+    function logout() {
+      currentIntern = null;
+      document.getElementById('portalScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('headerBadge').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginCode').value = '';
+    }
+
+    // Enter key on login
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') doLogin();
+    });
+  </script>
+</body>
+</html>
